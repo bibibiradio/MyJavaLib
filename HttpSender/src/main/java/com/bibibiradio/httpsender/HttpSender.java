@@ -8,6 +8,9 @@ public interface HttpSender {
 	public boolean setPeerCerts(File[] certs);
 	public boolean setMyCerts(File[] certs);
 	public void setTimeout(long timeout);
+	public void setSoTimeout(long soTimeout);
 	public void setRetryTime(long retryTime);
 	public void setSendFreq(long sendFreq);
+	public boolean start();
+	public void close();
 }

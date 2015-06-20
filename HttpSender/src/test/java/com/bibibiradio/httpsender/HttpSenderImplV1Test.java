@@ -6,6 +6,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.bibibiradio.httpsender.HttpSender;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -18,6 +20,7 @@ public class HttpSenderImplV1Test {
 		if(httpSender == null){
 			//httpSender = new HttpSenderImplV1("127.0.0.1",8080);
 			httpSender = new HttpSenderImplV1();
+			httpSender.setSendFreq(10000);
 		}
 	}
 
@@ -27,7 +30,7 @@ public class HttpSenderImplV1Test {
 
 	@Test
 	public void testSend() {
-		ResponseData response = httpSender.send("http://www.baidu.com", 0, null, "123".getBytes());
+		ResponseData response = httpSender.send("https://www.baidu.com", 0, null, "123".getBytes());
 		assertTrue(response != null);
 		Set<Entry<String, String>> responseSet = response.getResponseHeader().entrySet();
 		Iterator<Entry<String, String>> iter = responseSet.iterator();
@@ -37,6 +40,9 @@ public class HttpSenderImplV1Test {
 			System.out.println(entry.getKey()+":"+entry.getValue());
 		}
 		System.out.println(new String(response.getResponseContent()));
+		
+		response = httpSender.send("https://www.baidu.com", 0, null, "123".getBytes());
+		assertTrue(response != null);
 	}
 
 }
