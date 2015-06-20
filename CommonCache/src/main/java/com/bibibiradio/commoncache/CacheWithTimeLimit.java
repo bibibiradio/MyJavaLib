@@ -27,23 +27,10 @@ public class CacheWithTimeLimit {
 		timeLimit=30000000;
 	}
 	
-	/*
-	 * 插入数据
-	 * @key 缓存的索引
-	 * @rawData 需要缓存的数据
-	 * @返回 插入数据是否成功
-	 */
 	public boolean inputData(Object key,Object rawData){
 		return inputData(key,System.currentTimeMillis(),rawData);
 	}
 	
-	/*
-	 * 插入数据
-	 * @key 缓存的索引
-	 * @rawData 需要缓存的数据
-	 * @timestamp 时间戳
-	 * @返回 插入数据是否成功
-	 */
 	public boolean inputData(Object key,long timestamp,Object rawData){
 		if(rawData==null||key==null){
 			return false;
@@ -52,22 +39,24 @@ public class CacheWithTimeLimit {
 		removeCheckPointExecute();
 		
 		CacheData cData=new CacheData(key,rawData,timestamp);
-		if(!insertInChain(cData)){
-			return false;
+		CacheData preCData = null;
+		
+		preCData = insertInHashMap(cData);
+		
+		if(preCData != null){
+			removeFromChain(preCData);
+			if(userDispose!=null){
+				userDispose.dispose(key, preCData.getRawData(), preCData.getTimestamp(), timeLimit,3);
+			}
 		}
 		
-		if(!insertInHashMap(cData)){
+		if(!insertInChain(cData)){
 			return false;
 		}
 		
 		return true;
 	}
 	
-	/*
-	 * 获取数据
-	 * @key 缓存的索引
-	 * @返回 索引值所对应的数据，如果数据为空，返回null
-	 */
 	public Object getData(Object key){
 		CacheData cData=(CacheData)innerHashMap.get(key);
 		if(cData==null){
@@ -76,27 +65,19 @@ public class CacheWithTimeLimit {
 		return cData.getRawData();
 	}
 	
-	/*
-	 * 删除数据
-	 * @key 需删除数据的索引
-	 * @返回 删除是否成功
-	 */
 	public boolean removeData(Object key){
 		CacheData needRemoveData=(CacheData) innerHashMap.remove(key);
 		if(needRemoveData==null){
 			return true;
 		}
 		removeFromChain(needRemoveData);
-		/*if(userDispose!=null){
-			userDispose.dispose(key, needRemoveData.getRawData(), needRemoveData.getTimestamp(), timeLimit);
-		}*/
+		if(userDispose!=null){
+			userDispose.dispose(key, needRemoveData.getRawData(), needRemoveData.getTimestamp(), timeLimit,2);
+		}
 		removeCheckPointExecute();
 		return true;
 	}
 	
-	/*
-	 * 检查点
-	 */
 	public void removeCheckPointExecute(){
 		removeFromChainAndHashMap();
 	}
@@ -143,9 +124,8 @@ public class CacheWithTimeLimit {
 		return true;
 	}
 	
-	private boolean insertInHashMap(CacheData cData){
-		innerHashMap.put(cData.getKey(), cData);
-		return true;
+	private CacheData insertInHashMap(CacheData cData){
+		return (CacheData) innerHashMap.put(cData.getKey(), cData);
 	}
 	
 	private void removeFromChainAndHashMap(){
@@ -168,7 +148,7 @@ public class CacheWithTimeLimit {
 			removeFromHashMap(needRemoveTmp);
 			removeFromChain(needRemoveTmp);
 			if(userDispose!=null){
-				userDispose.dispose(needRemoveTmp.getKey(), needRemoveTmp.getRawData(), needRemoveTmp.getTimestamp(), timeLimit);
+				userDispose.dispose(needRemoveTmp.getKey(), needRemoveTmp.getRawData(), needRemoveTmp.getTimestamp(), timeLimit,1);
 			}
 		}
 	}
