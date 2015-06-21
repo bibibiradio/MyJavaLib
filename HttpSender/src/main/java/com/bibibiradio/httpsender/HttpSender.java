@@ -11,6 +11,7 @@ public interface HttpSender {
 	public void setSoTimeout(long soTimeout);
 	public void setRetryTime(long retryTime);
 	public void setSendFreq(long sendFreq);
+	public void setHttpProxy(String proxyIp,int proxyPort);
 	public boolean start();
 	public void close();
 }

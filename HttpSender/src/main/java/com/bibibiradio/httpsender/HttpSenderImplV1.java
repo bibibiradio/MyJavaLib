@@ -39,7 +39,7 @@ public class HttpSenderImplV1 implements HttpSender {
 	private long lastSend = -1;
 	
 	public HttpSenderImplV1(){
-		lastSend = System.currentTimeMillis();
+		//lastSend = System.currentTimeMillis();
 	}
 	
 	public HttpSenderImplV1(String proxyIp,int proxyPort){
@@ -186,6 +186,14 @@ public class HttpSenderImplV1 implements HttpSender {
 
 	public void setProxyPort(int proxyPort) {
 		this.proxyPort = proxyPort;
+	}
+	
+	@Override
+	public void setHttpProxy(String proxyIp, int proxyPort) {
+		// TODO Auto-generated method stub
+		this.proxyIp = proxyIp;
+		this.proxyPort = proxyPort;
+		
 	}
 
 	@Override
