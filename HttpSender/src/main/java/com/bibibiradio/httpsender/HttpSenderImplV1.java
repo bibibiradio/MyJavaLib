@@ -146,6 +146,7 @@ public class HttpSenderImplV1 implements HttpSender {
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			return null;
 		}
 		
 		//获取响应头
