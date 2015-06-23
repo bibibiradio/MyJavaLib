@@ -95,7 +95,7 @@
 		        <includes>  
 		            <include>**/*Test.java</include>  
 		        </includes>
-		        <encoding>gbk</encoding>
+		        <encoding>UTF-8</encoding>
 		        <excludes>
 		        	<exclude>**/TravelHandlerTest.java</exclude> 
 		            <!--  <exclude>**/*ServiceTest.java</exclude>  
