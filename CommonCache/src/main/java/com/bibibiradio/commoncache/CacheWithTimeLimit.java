@@ -10,7 +10,7 @@ public class CacheWithTimeLimit {
 	
 	private CacheDispose userDispose=null;
 	
-	private HashMap<Object,Object> innerHashMap=null;
+	private HashMap<Object,CacheData> innerHashMap=null;
 	
 	private boolean needTimeLimit=true;
 	private long timeLimit=-1;
@@ -18,7 +18,7 @@ public class CacheWithTimeLimit {
 	
 	
 	public CacheWithTimeLimit(){
-		innerHashMap=new HashMap<Object,Object>();
+		innerHashMap=new HashMap<Object,CacheData>();
 		oldestCacheData=null;
 		newestCacheData=null;
 		oldestTimestamp=-1;
@@ -58,7 +58,7 @@ public class CacheWithTimeLimit {
 	}
 	
 	public Object getData(Object key){
-		CacheData cData=(CacheData)innerHashMap.get(key);
+		CacheData cData=innerHashMap.get(key);
 		if(cData==null){
 			return null;
 		}
@@ -190,11 +190,11 @@ public class CacheWithTimeLimit {
 		this.userDispose = userDispose;
 	}
 
-	public HashMap<Object, Object> getInnerHashMap() {
+	public HashMap<Object, CacheData> getInnerHashMap() {
 		return innerHashMap;
 	}
 
-	public void setInnerHashMap(HashMap<Object, Object> innerHashMap) {
+	public void setInnerHashMap(HashMap<Object, CacheData> innerHashMap) {
 		this.innerHashMap = innerHashMap;
 	}
 

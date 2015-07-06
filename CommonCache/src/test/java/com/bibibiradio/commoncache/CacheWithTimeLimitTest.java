@@ -3,13 +3,11 @@ package com.bibibiradio.commoncache;
 import static org.junit.Assert.*;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import com.bibibiradio.commoncache.CacheData;
-import com.bibibiradio.commoncache.CacheWithTimeLimit;
 
 public class CacheWithTimeLimitTest {
 	static CacheWithTimeLimit testCache = null;
@@ -147,6 +145,60 @@ public class CacheWithTimeLimitTest {
 		String a3 = hm.put("111","444");
 		assertTrue(a3 != null);
 		assertTrue(a3.equals("222"));
+	}
+	
+	@Test
+	public void performanceTesting(){
+		long mapStart,mapEnd,insertMapPerformance,getMapPerformance;
+		long cacheStart,cacheEnd,insertCachePerformance,getCachePerformance;
+		
+		Map<Integer,Integer>[] testList = (HashMap<Integer,Integer>[])(new HashMap[1000000]);
+		for(int i = 0;i < 1000000;i++){
+			testList[i] = new HashMap<Integer,Integer>();
+			testList[i].put(i, i);
+		}
+		
+		Map<Object,Object> testMap = new HashMap<Object,Object>();
+		
+		CacheDispose storedUserDispose = testCache.getUserDispose();
+		
+		mapStart = System.currentTimeMillis();
+		for(int i = 0;i < 1000000;i++){
+			testMap.put(Integer.valueOf(i), testList[i]);
+		}
+		mapEnd = System.currentTimeMillis();
+		insertMapPerformance = mapEnd - mapStart;
+		
+		cacheStart = System.currentTimeMillis();
+		for(int i = 0;i < 1000000;i++){
+			testCache.inputData(Integer.valueOf(i), testList[i]);
+		}
+		cacheEnd = System.currentTimeMillis();
+		insertCachePerformance = cacheEnd - cacheStart;
+		
+		mapStart = System.currentTimeMillis();
+		for(int i = 999999;i >= 0;i--){
+			testMap.get(Integer.valueOf(i));
+		}
+		mapEnd = System.currentTimeMillis();
+		getMapPerformance = mapEnd - mapStart;
+		
+		cacheStart = System.currentTimeMillis();
+		for(int i = 999999;i >= 0;i--){
+			testCache.getData(Integer.valueOf(i));
+		}
+		cacheEnd = System.currentTimeMillis();
+		getCachePerformance = cacheEnd - cacheStart;
+		
+		System.out.println("insertMapPerformance:"+insertMapPerformance);
+		System.out.println("insertCachePerformance:"+insertCachePerformance);
+		System.out.println("getMapPerformance:"+getMapPerformance);
+		System.out.println("getCachePerformance:"+getCachePerformance);
+		
+		testCache.setUserDispose(storedUserDispose);
+		
+		assertTrue(getCachePerformance/(double)getMapPerformance <= 50);
+		assertTrue(insertCachePerformance/(double)insertMapPerformance <= 5);
 	}
 	
 	private static void show(CacheWithTimeLimit cache){
