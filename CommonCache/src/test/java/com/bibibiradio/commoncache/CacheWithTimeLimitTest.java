@@ -197,7 +197,7 @@ public class CacheWithTimeLimitTest {
 		
 		testCache.setUserDispose(storedUserDispose);
 		
-		assertTrue(getCachePerformance/(double)getMapPerformance <= 50);
+		assertTrue(getCachePerformance/(double)getMapPerformance <= 10);
 		assertTrue(insertCachePerformance/(double)insertMapPerformance <= 5);
 	}
 	
