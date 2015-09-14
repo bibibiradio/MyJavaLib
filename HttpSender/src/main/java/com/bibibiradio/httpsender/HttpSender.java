@@ -13,5 +13,6 @@ public interface HttpSender {
 	public void setSendFreq(long sendFreq);
 	public void setHttpProxy(String proxyIp,int proxyPort);
 	public boolean start();
+	public void setCodec(boolean isCodec);
 	public void close();
 }

@@ -11,10 +11,14 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.http.Header;
+import org.apache.http.HeaderElement;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
+import org.apache.http.HttpResponseInterceptor;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.GzipDecompressingEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
@@ -22,11 +26,13 @@ import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.conn.params.ConnRoutePNames;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.AbstractHttpClient;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
+import org.apache.http.protocol.HttpContext;
 
 public class HttpSenderImplV1 implements HttpSender {
 	private static HttpClient client = null;
@@ -37,6 +43,7 @@ public class HttpSenderImplV1 implements HttpSender {
 	private int soTimeout = -1;
 	private long sendFreq = -1;
 	private long lastSend = -1;
+	private boolean isCodec = false;
 	
 	public HttpSenderImplV1(){
 		//lastSend = System.currentTimeMillis();
@@ -165,8 +172,15 @@ public class HttpSenderImplV1 implements HttpSender {
 		return retData;
 	}
 	
-	
-	
+
+	public boolean isCodec() {
+		return isCodec;
+	}
+
+	public void setCodec(boolean isCodec) {
+		this.isCodec = isCodec;
+	}
+
 	public String getProxyIp() {
 		return proxyIp;
 	}
@@ -291,6 +305,30 @@ public class HttpSenderImplV1 implements HttpSender {
 		//处理连接超时时间
 		ClientConnectionManager conMgr =new ThreadSafeClientConnManager();
 		
-		return new DefaultHttpClient(conMgr,params);
+		DefaultHttpClient httpClient = new DefaultHttpClient(conMgr,params);
+		
+		if(isCodec){
+			httpClient.addResponseInterceptor(new HttpResponseInterceptor() {  
+				   @Override
+		           public void process(  
+		                   HttpResponse response,   
+		                   HttpContext context) throws HttpException, IOException {  
+		               HttpEntity entity = response.getEntity();  
+		               Header ceheader = entity.getContentEncoding();  
+		               if (ceheader != null) {  
+		                   HeaderElement[] codecs = ceheader.getElements();  
+		                   for (int i = 0; i < codecs.length; i++) {  
+		                       if (codecs[i].getName().equalsIgnoreCase("gzip")) {  
+		                           response.setEntity(  
+		                                   new GzipDecompressingEntity(response.getEntity()));   
+		                           return;  
+		                       }  
+		                   }  
+		               }  
+		           } 
+		       });
+		}
+		
+		return httpClient;
 	}
 }

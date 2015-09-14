@@ -21,6 +21,7 @@ public class HttpSenderImplV1Test {
 		if(httpSender == null){
 			//httpSender = new HttpSenderImplV1("127.0.0.1",8080);
 			httpSender = new HttpSenderImplV1();
+			httpSender.setCodec(true);
 			httpSender.setSendFreq(10000);
 		}
 	}
@@ -44,6 +45,23 @@ public class HttpSenderImplV1Test {
 		
 		response = httpSender.send("https://www.baidu.com", 0, null, "123".getBytes());
 		assertTrue(response != null);
+	}
+	
+	@Test
+	public void testSend2() {
+		Map<String,String> header = new HashMap<String,String>();
+		//header.put("Accept-Encoding", "compress;q=0,gzip;q=0");
+		ResponseData response = httpSender.send("http://www.bilibili.com/video/av2893535/", 0, header, null);
+		assertTrue(response != null);
+		Set<Entry<String, String>> responseSet = response.getResponseHeader().entrySet();
+		Iterator<Entry<String, String>> iter = responseSet.iterator();
+		System.out.println(response.getStatusCode());
+		while(iter.hasNext()){
+			Entry<String,String> entry = iter.next();
+			System.out.println(entry.getKey()+":"+entry.getValue());
+		}
+		System.out.println(new String(response.getResponseContent()));
+
 	}
 
 }
