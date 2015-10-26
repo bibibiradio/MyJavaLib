@@ -18,12 +18,12 @@ import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpResponseInterceptor;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.GzipDecompressingEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.client.params.ClientPNames;
 import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.conn.params.ConnRoutePNames;
 import org.apache.http.entity.StringEntity;
@@ -36,7 +36,7 @@ import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HttpContext;
 
 public class HttpSenderImplV1 implements HttpSender {
-	private static HttpClient client = null;
+	private HttpClient client = null;
 	private String proxyIp = null;
 	private int proxyPort = -1;
 	private int retryTime = 0;
@@ -98,6 +98,9 @@ public class HttpSenderImplV1 implements HttpSender {
 		
 		if(client == null){
 			client = newHttpClient();
+			if(isAutoRedirect == false){
+	            client.getParams().setParameter(ClientPNames.HANDLE_REDIRECTS,false);
+	        }
 		}
 		
 		//处理GET POST PUT 请求
@@ -126,11 +129,6 @@ public class HttpSenderImplV1 implements HttpSender {
 				}
 			}
 			httpMethod = httpPut;
-		}
-		
-		if(isAutoRedirect == false){
-    		RequestConfig requestConfig = RequestConfig.custom().setRedirectsEnabled(false).build();
-    		httpMethod.setConfig(requestConfig);
 		}
 		
 		//设置请求头
