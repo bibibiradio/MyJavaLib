@@ -18,6 +18,7 @@ import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpResponseInterceptor;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.GzipDecompressingEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -44,6 +45,7 @@ public class HttpSenderImplV1 implements HttpSender {
 	private long sendFreq = -1;
 	private long lastSend = -1;
 	private boolean isCodec = false;
+	private boolean isAutoRedirect = true;
 	
 	public HttpSenderImplV1(){
 		//lastSend = System.currentTimeMillis();
@@ -124,6 +126,11 @@ public class HttpSenderImplV1 implements HttpSender {
 				}
 			}
 			httpMethod = httpPut;
+		}
+		
+		if(isAutoRedirect == false){
+    		RequestConfig requestConfig = RequestConfig.custom().setRedirectsEnabled(false).build();
+    		httpMethod.setConfig(requestConfig);
 		}
 		
 		//设置请求头
@@ -242,7 +249,15 @@ public class HttpSenderImplV1 implements HttpSender {
 		
 	}
 	
-	@Override
+	public boolean isAutoRedirect() {
+        return isAutoRedirect;
+    }
+
+    public void setAutoRedirect(boolean isAutoRedirect) {
+        this.isAutoRedirect = isAutoRedirect;
+    }
+
+    @Override
 	public boolean start() {
 		// TODO Auto-generated method stub
 		return true;

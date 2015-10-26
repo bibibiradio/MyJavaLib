@@ -12,6 +12,7 @@ public interface HttpSender {
 	public void setRetryTime(long retryTime);
 	public void setSendFreq(long sendFreq);
 	public void setHttpProxy(String proxyIp,int proxyPort);
+	public void setAutoRedirect(boolean isAutoRedirect);
 	public boolean start();
 	public void setCodec(boolean isCodec);
 	public void close();
