@@ -4,7 +4,7 @@
   <groupId>com.bibibiradio.commoncache</groupId>
   <artifactId>commoncache</artifactId>
   <packaging>jar</packaging>
-  <version>1.2</version>
+  <version>1.4</version>
   <name>commoncache</name>
   <url>http://maven.apache.org</url>
   <dependencies>

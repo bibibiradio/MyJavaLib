@@ -2,25 +2,28 @@ package com.bibibiradio.commoncache;
 
 import java.util.HashMap;
 
+import com.bibibiradio.chain.DoublyLinkedList;
+import com.bibibiradio.chain.DoublyLinkedProxyData;
+
 public class CacheWithTimeLimit {
 	private long oldestTimestamp=-1;
 	private long newestTimestamp=-1;
-	private CacheData oldestCacheData=null;
-	private CacheData newestCacheData=null;
+	
+	private DoublyLinkedList chain;
 	
 	private CacheDispose userDispose=null;
 	
-	private HashMap<Object,CacheData> innerHashMap=null;
+	private HashMap<Object,DoublyLinkedProxyData> innerHashMap=null;
 	
 	private boolean needTimeLimit=true;
+	private boolean autoCheckPoint=true;
 	private long timeLimit=-1;
 	
 	
 	
 	public CacheWithTimeLimit(){
-		innerHashMap=new HashMap<Object,CacheData>();
-		oldestCacheData=null;
-		newestCacheData=null;
+		innerHashMap=new HashMap<Object,DoublyLinkedProxyData>();
+		chain = new DoublyLinkedList();
 		oldestTimestamp=-1;
 		newestTimestamp=-1;
 		needTimeLimit=true;
@@ -36,45 +39,46 @@ public class CacheWithTimeLimit {
 			return false;
 		}
 		
-		removeCheckPointExecute();
-		
-		CacheData cData=new CacheData(key,rawData,timestamp);
-		CacheData preCData = null;
-		
-		preCData = insertInHashMap(cData);
-		
-		if(preCData != null){
-			removeFromChain(preCData);
-			if(userDispose!=null){
-				userDispose.dispose(key, preCData.getRawData(), preCData.getTimestamp(), timeLimit,3);
-			}
+		if(autoCheckPoint == true){
+		    removeCheckPointExecute();
 		}
 		
-		if(!insertInChain(cData)){
-			return false;
+		CacheData cData=new CacheData(key,rawData,timestamp);
+		DoublyLinkedProxyData preCData = null;
+		
+		preCData = insertInHashMap(insertInChain(cData));
+		
+		if(preCData != null){
+			chain.removeEleFromChain(preCData);
+			if(userDispose!=null){
+				userDispose.dispose(key, ((CacheData)preCData.getRealData()).getRawData(), ((CacheData)preCData.getRealData()).getTimestamp(), timeLimit,3);
+			}
 		}
 		
 		return true;
 	}
 	
 	public Object getData(Object key){
-		CacheData cData=innerHashMap.get(key);
+		DoublyLinkedProxyData cData=innerHashMap.get(key);
 		if(cData==null){
 			return null;
 		}
-		return cData.getRawData();
+		return ((CacheData)cData.getRealData()).getRawData();
 	}
 	
 	public boolean removeData(Object key){
-		CacheData needRemoveData=(CacheData) innerHashMap.remove(key);
+	    DoublyLinkedProxyData needRemoveData=innerHashMap.remove(key);
 		if(needRemoveData==null){
 			return true;
 		}
-		removeFromChain(needRemoveData);
+		chain.removeEleFromChain(needRemoveData);
 		if(userDispose!=null){
-			userDispose.dispose(key, needRemoveData.getRawData(), needRemoveData.getTimestamp(), timeLimit,2);
+			userDispose.dispose(key, ((CacheData)needRemoveData.getRealData()).getRawData(), ((CacheData)needRemoveData.getRealData()).getTimestamp(), timeLimit,2);
 		}
-		removeCheckPointExecute();
+		
+		if(autoCheckPoint == true){
+		    removeCheckPointExecute();
+		}
 		return true;
 	}
 	
@@ -82,50 +86,32 @@ public class CacheWithTimeLimit {
 		removeFromChainAndHashMap();
 	}
 	
-	private boolean insertInChain(CacheData cData){
-		if(oldestCacheData==null||newestCacheData==null){
-			oldestCacheData=cData;
-			newestCacheData=cData;
-			oldestTimestamp=cData.getTimestamp();
-			newestTimestamp=cData.getTimestamp();
-			cData.setNextCacheData(null);
-			cData.setPreCacheData(null);
+	private DoublyLinkedProxyData insertInChain(CacheData cData){
+	    DoublyLinkedProxyData ret = null;
+		if(chain.getTail() == null){
+			ret = chain.inputNextOfTail(cData);
 		}else{
 			//
-			CacheData preTmp=null,nextTmp=null;
-			preTmp=newestCacheData;
-			nextTmp=null;
-			while(preTmp!=null){
-				if(preTmp.getTimestamp()<=cData.getTimestamp()){
-					cData.setPreCacheData(preTmp);
-					cData.setNextCacheData(nextTmp);
-					if(preTmp!=null){
-						preTmp.setNextCacheData(cData);
-					}
-					if(nextTmp!=null){
-						nextTmp.setPreCacheData(cData);
-					}
+			DoublyLinkedProxyData tmp;
+			tmp=chain.getTail();
+			while(tmp!=null){
+				if(((CacheData)(tmp.getRealData())).getTimestamp()<=cData.getTimestamp()){
+					ret = chain.inputNextOfEle(cData, tmp);
 					break;
 				}
-				nextTmp=preTmp;
-				preTmp=preTmp.getPreCacheData();
+				
+				tmp=tmp.getPre();
 			}
-			if(oldestCacheData.getTimestamp()>cData.getTimestamp()){
-				cData.setPreCacheData(null);
-				cData.setNextCacheData(oldestCacheData);
-				oldestCacheData.setPreCacheData(cData);
-				oldestCacheData=cData;
-				oldestTimestamp=cData.getTimestamp();
-			}else if(newestCacheData.getTimestamp()<=cData.getTimestamp()){
-				newestCacheData=cData;
-				newestTimestamp=cData.getTimestamp();
+			
+			if(tmp == null){
+			    ret = chain.inputPreOfEle(cData, chain.getHead());
 			}
 		}
-		return true;
+		return ret;
 	}
 	
-	private CacheData insertInHashMap(CacheData cData){
-		return (CacheData) innerHashMap.put(cData.getKey(), cData);
+	private DoublyLinkedProxyData insertInHashMap(DoublyLinkedProxyData cData){
+		return (DoublyLinkedProxyData) innerHashMap.put(((CacheData)(cData.getRealData())).getKey(), cData);
 	}
 	
 	private void removeFromChainAndHashMap(){
@@ -133,23 +119,27 @@ public class CacheWithTimeLimit {
 			return;
 		}
 		long nowTime=System.currentTimeMillis();
-		CacheData currentTmp=oldestCacheData;
+		DoublyLinkedProxyData currentTmp=chain.getHead();
 		if(currentTmp==null){
 			return;
 		}
 		
 		while(currentTmp!=null){
-			if(!isExpire(nowTime,currentTmp)){
+			if(!isExpire(nowTime,(CacheData)currentTmp.getRealData())){
 				break;
 			}
-			CacheData needRemoveTmp=currentTmp;
-			currentTmp=currentTmp.getNextCacheData();
+			CacheData needRemoveTmp=(CacheData)currentTmp.getRealData();
+			currentTmp=currentTmp.getNext();
 			
 			removeFromHashMap(needRemoveTmp);
-			removeFromChain(needRemoveTmp);
+
 			if(userDispose!=null){
 				userDispose.dispose(needRemoveTmp.getKey(), needRemoveTmp.getRawData(), needRemoveTmp.getTimestamp(), timeLimit,1);
 			}
+		}
+		
+		if(currentTmp != null && currentTmp.getPre() != null){
+		    chain.removeElesFromEleAndThePres(currentTmp.getPre());
 		}
 	}
 	
@@ -165,22 +155,22 @@ public class CacheWithTimeLimit {
 		innerHashMap.remove(key);
 	}
 	
-	private void removeFromChain(CacheData cData){
-		if(cData==oldestCacheData){
-			oldestCacheData=cData.getNextCacheData();
-		}
-		if(cData==newestCacheData){
-			newestCacheData=cData.getPreCacheData();
-		}
-		if(cData.getPreCacheData()!=null){
-			cData.getPreCacheData().setNextCacheData(cData.getNextCacheData());
-		}
-		if(cData.getNextCacheData()!=null){
-			cData.getNextCacheData().setPreCacheData(cData.getPreCacheData());
-		}
-		cData.setNextCacheData(null);
-		cData.setPreCacheData(null);
-	}
+//	private void removeFromChain(CacheData cData){
+//		if(cData==oldestCacheData){
+//			oldestCacheData=cData.getNextCacheData();
+//		}
+//		if(cData==newestCacheData){
+//			newestCacheData=cData.getPreCacheData();
+//		}
+//		if(cData.getPreCacheData()!=null){
+//			cData.getPreCacheData().setNextCacheData(cData.getNextCacheData());
+//		}
+//		if(cData.getNextCacheData()!=null){
+//			cData.getNextCacheData().setPreCacheData(cData.getPreCacheData());
+//		}
+//		cData.setNextCacheData(null);
+//		cData.setPreCacheData(null);
+//	}
 
 	public CacheDispose getUserDispose() {
 		return userDispose;
@@ -190,11 +180,11 @@ public class CacheWithTimeLimit {
 		this.userDispose = userDispose;
 	}
 
-	public HashMap<Object, CacheData> getInnerHashMap() {
+	public HashMap<Object, DoublyLinkedProxyData> getInnerHashMap() {
 		return innerHashMap;
 	}
 
-	public void setInnerHashMap(HashMap<Object, CacheData> innerHashMap) {
+	public void setInnerHashMap(HashMap<Object, DoublyLinkedProxyData> innerHashMap) {
 		this.innerHashMap = innerHashMap;
 	}
 
@@ -222,21 +212,21 @@ public class CacheWithTimeLimit {
 		this.newestTimestamp = newestTimestamp;
 	}
 
-	public CacheData getOldestCacheData() {
-		return oldestCacheData;
-	}
-
-	public void setOldestCacheData(CacheData oldestCacheData) {
-		this.oldestCacheData = oldestCacheData;
-	}
-
-	public CacheData getNewestCacheData() {
-		return newestCacheData;
-	}
-
-	public void setNewestCacheData(CacheData newestCacheData) {
-		this.newestCacheData = newestCacheData;
-	}
+//	public CacheData getOldestCacheData() {
+//		return oldestCacheData;
+//	}
+//
+//	public void setOldestCacheData(CacheData oldestCacheData) {
+//		this.oldestCacheData = oldestCacheData;
+//	}
+//
+//	public CacheData getNewestCacheData() {
+//		return newestCacheData;
+//	}
+//
+//	public void setNewestCacheData(CacheData newestCacheData) {
+//		this.newestCacheData = newestCacheData;
+//	}
 
 	public boolean isNeedTimeLimit() {
 		return needTimeLimit;
@@ -245,5 +235,22 @@ public class CacheWithTimeLimit {
 	public void setNeedTimeLimit(boolean needTimeLimit) {
 		this.needTimeLimit = needTimeLimit;
 	}
+
+    public boolean isAutoCheckPoint() {
+        return autoCheckPoint;
+    }
+
+    public void setAutoCheckPoint(boolean autoCheckPoint) {
+        this.autoCheckPoint = autoCheckPoint;
+    }
+
+    public DoublyLinkedList getChain() {
+        return chain;
+    }
+
+    public void setChain(DoublyLinkedList chain) {
+        this.chain = chain;
+    }
 	
+    
 }
