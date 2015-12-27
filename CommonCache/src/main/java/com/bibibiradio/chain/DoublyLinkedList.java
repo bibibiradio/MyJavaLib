@@ -1,4 +1,7 @@
 package com.bibibiradio.chain;
+
+import java.util.Iterator;
+
 /**
  * 双向链表实现<br>
  * 注意，该实现非线程安全<p>
@@ -147,6 +150,22 @@ public class DoublyLinkedList {
             tail = ele.getPre();
             tail.setNext(null);
         }
+    }
+    
+    /**
+     * 获取从头遍历到尾的迭代器
+     * @return 返回迭代器实例
+     */
+    public Iterator<DoublyLinkedProxyData> getForwardIterator(){
+        return new DoublyLinkedListForwardIterator(head);
+    }
+    
+    /**
+     * 获取从尾遍历到头的迭代器
+     * @return 返回迭代器实例
+     */
+    public Iterator<DoublyLinkedProxyData> getBackIterator(){
+        return new DoublyLinkedListBackIterator(tail);
     }
 
     public DoublyLinkedProxyData getHead() {

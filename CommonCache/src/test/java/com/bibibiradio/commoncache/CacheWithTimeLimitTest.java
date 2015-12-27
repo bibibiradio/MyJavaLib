@@ -9,6 +9,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.bibibiradio.chain.DoublyLinkedProxyData;
+
 public class CacheWithTimeLimitTest {
 	static CacheWithTimeLimit testCache = null;
 	
@@ -18,7 +20,7 @@ public class CacheWithTimeLimitTest {
 		public void dispose(Object key, Object rawData, long timestamp,
 				long timeLimit,int type) {
 			// TODO Auto-generated method stub
-			System.out.println("[dispose] "+type+" "+timestamp+" "+(String)rawData);
+			System.out.println("[dispose] "+type+" "+timestamp+" "+rawData);
 		}
 		
 	}
@@ -136,7 +138,8 @@ public class CacheWithTimeLimitTest {
 		System.out.println("[cacheTest] "+r1);
 	}
 	
-	@Test public void testHashMap(){
+	@Test
+	public void testHashMap(){
 		HashMap<String,String> hm = new HashMap<String,String>();
 		String a1 = hm.put("111", "222");
 		assertTrue(a1 == null);
@@ -171,6 +174,7 @@ public class CacheWithTimeLimitTest {
 		
 		cacheStart = System.currentTimeMillis();
 		for(int i = 0;i < 1000000;i++){
+		    //System.out.println(i);
 			testCache.inputData(Integer.valueOf(i), testList[i]);
 		}
 		cacheEnd = System.currentTimeMillis();
@@ -202,10 +206,10 @@ public class CacheWithTimeLimitTest {
 	}
 	
 	private static void show(CacheWithTimeLimit cache){
-		CacheData oldest=cache.getOldestCacheData();
+		DoublyLinkedProxyData oldest=cache.getTimeLimitChain().getHead();
 		System.out.print("[show] start");
-		for(CacheData tmp=oldest;tmp!=null;tmp=tmp.getNextCacheData()){
-			System.out.print("<-->key:"+tmp.getKey()+" v:"+(String)tmp.getRawData()+" "+" tm:"+tmp.getTimestamp());
+		for(DoublyLinkedProxyData tmp=oldest;tmp!=null;tmp=tmp.getNext()){
+			System.out.print("<-->key:"+((CacheData)tmp.getRealData()).getKey()+" v:"+(String)(((CacheData)tmp.getRealData()).getRawData())+" "+" tm:"+((CacheData)tmp.getRealData()).getTimestamp());
 		}
 		System.out.print("<-->end\n");
 	}
