@@ -35,6 +35,13 @@ import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HttpContext;
 
+/**
+ * 
+ * Http客户端，支持GET,POST,PUT请求，支持设置请求头，设置代理，设置访问频率，设置超时时间，设置重试次数，设置自动跳转开关。
+ * @version 1.1.4
+ * @author xiaoleixl
+ *
+ */
 public class HttpSenderImplV1 implements HttpSender {
 	private HttpClient client = null;
 	private String proxyIp = null;
@@ -51,14 +58,18 @@ public class HttpSenderImplV1 implements HttpSender {
 		//lastSend = System.currentTimeMillis();
 	}
 	
+	/**
+	 * 可设置HTTP代理地址
+	 * @param proxyIp 代理IP，String类型
+	 * @param proxyPort 代理端口，int类型
+	 */
 	public HttpSenderImplV1(String proxyIp,int proxyPort){
 		this.proxyIp = proxyIp;
 		this.proxyPort = proxyPort;
 	}
 	
 	@Override
-	public ResponseData send(String url, int method,
-			Map<String, String> header, byte[] body) {
+	public ResponseData send(String url, int method,Map<String, String> header, byte[] body) {
 		ResponseData responseData = null;
 		
 		//请求失败后的重试次数
@@ -72,11 +83,20 @@ public class HttpSenderImplV1 implements HttpSender {
 		return null;
 	}
 	
+	/**
+	 * 
+	 * 实际发送Http请求
+     * @param url url
+     * @param method 0,Get;1,POST;2,PUT
+     * @param header http头
+     * @param body http的body
+     * @return 请求返回结果
+	 */
 	public ResponseData oriSend(String url, int method,
 			Map<String, String> header, byte[] body) {
 		// TODO Auto-generated method stub
 		HttpRequestBase httpMethod = null;
-		HttpResponse reponse = null;
+		//HttpResponse reponse = null;
 		Set<Entry<String, String>> headers = null;
 		Iterator iter = null;
 		byte[] content = null;
@@ -181,11 +201,12 @@ public class HttpSenderImplV1 implements HttpSender {
 	public boolean isCodec() {
 		return isCodec;
 	}
-
+	
+	
 	public void setCodec(boolean isCodec) {
 		this.isCodec = isCodec;
 	}
-
+	
 	public String getProxyIp() {
 		return proxyIp;
 	}
@@ -275,6 +296,11 @@ public class HttpSenderImplV1 implements HttpSender {
 		this.soTimeout = (int) soTimeout;
 	}
 	
+	/**
+	 * 将返回数据流读出成byte[]
+	 * @param inputStream 请求返回的流
+	 * @return 请求返回数据
+	 */
 	private byte[] readAllFromInputStream(InputStream inputStream){
 		StringBuilder sb1 = new StringBuilder();      
         byte[] bytes = new byte[4096];    
@@ -297,6 +323,10 @@ public class HttpSenderImplV1 implements HttpSender {
         return sb1.toString().getBytes();
 	}
 	
+	/**
+	 * 底层生成HttpClient实例
+	 * @return HttpClient客户端
+	 */
 	private HttpClient newHttpClient(){
 		HttpParams params =new BasicHttpParams();
 		

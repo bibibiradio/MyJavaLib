@@ -1,15 +1,21 @@
 package com.bibibiradio.commoncache;
 
+import com.bibibiradio.chain.DoublyLinkedProxyData;
+
 
 public class CacheData {
 	private Object key;
 	private Object rawData;
-	private long timestamp;
+	private long InsertTimestamp;
+	private long AccessTimestamp;
+	private DoublyLinkedProxyData timeLimitChainEleRef;
+	private DoublyLinkedProxyData accessChainEleRef;
 	
-	public CacheData(Object key,Object rawData,long timestamp){
+	public CacheData(Object key,Object rawData,long InsertTimestamp,long AccessTimestamp){
 		this.key=key;
 		this.rawData = rawData;
-		this.timestamp=timestamp;
+		this.InsertTimestamp=InsertTimestamp;
+		this.AccessTimestamp = AccessTimestamp;
 	}
 	
 	public CacheData(){}
@@ -23,13 +29,21 @@ public class CacheData {
 		this.key = key;
 	}
 
-	public long getTimestamp() {
-		return timestamp;
-	}
+    public long getInsertTimestamp() {
+        return InsertTimestamp;
+    }
 
-	public void setTimestamp(long timestamp) {
-		this.timestamp = timestamp;
-	}
+    public void setInsertTimestamp(long insertTimestamp) {
+        InsertTimestamp = insertTimestamp;
+    }
+
+    public long getAccessTimestamp() {
+        return AccessTimestamp;
+    }
+
+    public void setAccessTimestamp(long accessTimestamp) {
+        AccessTimestamp = accessTimestamp;
+    }
 
     public Object getRawData() {
         return rawData;
@@ -37,6 +51,22 @@ public class CacheData {
 
     public void setRawData(Object rawData) {
         this.rawData = rawData;
+    }
+
+    public DoublyLinkedProxyData getTimeLimitChainEleRef() {
+        return timeLimitChainEleRef;
+    }
+
+    public void setTimeLimitChainEleRef(DoublyLinkedProxyData timeLimitChainEleRef) {
+        this.timeLimitChainEleRef = timeLimitChainEleRef;
+    }
+
+    public DoublyLinkedProxyData getAccessChainEleRef() {
+        return accessChainEleRef;
+    }
+
+    public void setAccessChainEleRef(DoublyLinkedProxyData accessChainEleRef) {
+        this.accessChainEleRef = accessChainEleRef;
     }
 	
 }

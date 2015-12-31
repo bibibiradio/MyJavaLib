@@ -114,7 +114,9 @@ public class DoublyLinkedList {
      * @param ele 待删除的链表项
      */
     public void removeEleFromChain(DoublyLinkedProxyData ele){
-        if(head == ele){
+        if(head == ele && tail == ele){
+            head = tail = null;
+        }else if(head == ele){
             head = ele.getNext();
             ele.getNext().setPre(null);
         }else if(tail == ele){

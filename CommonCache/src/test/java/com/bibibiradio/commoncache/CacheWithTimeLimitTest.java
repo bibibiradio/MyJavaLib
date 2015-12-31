@@ -34,6 +34,8 @@ public class CacheWithTimeLimitTest {
 			userDisposer.dispose("1", "1234", System.currentTimeMillis(), 100,-1);
 			testCache.setUserDispose(userDisposer);
 			testCache.setTimeLimit(5000);
+			testCache.setAccessTimeLimit(50000);
+			testCache.setNeedAccessTimeLimit(true);
 			
 			//testCache.setNeedTimeLimit(false);
 		}
@@ -207,11 +209,18 @@ public class CacheWithTimeLimitTest {
 	
 	private static void show(CacheWithTimeLimit cache){
 		DoublyLinkedProxyData oldest=cache.getTimeLimitChain().getHead();
-		System.out.print("[show] start");
+		System.out.print("[showTimeLimit] start");
 		for(DoublyLinkedProxyData tmp=oldest;tmp!=null;tmp=tmp.getNext()){
-			System.out.print("<-->key:"+((CacheData)tmp.getRealData()).getKey()+" v:"+(String)(((CacheData)tmp.getRealData()).getRawData())+" "+" tm:"+((CacheData)tmp.getRealData()).getTimestamp());
+			System.out.print("<-->key:"+((CacheData)tmp.getRealData()).getKey()+" v:"+(String)(((CacheData)tmp.getRealData()).getRawData())+" "+" tm:"+((CacheData)tmp.getRealData()).getInsertTimestamp());
 		}
 		System.out.print("<-->end\n");
+		
+		oldest=cache.getAccessChain().getHead();
+        System.out.print("[showAccess] start");
+        for(DoublyLinkedProxyData tmp=oldest;tmp!=null;tmp=tmp.getNext()){
+            System.out.print("<-->key:"+((CacheData)tmp.getRealData()).getKey()+" v:"+(String)(((CacheData)tmp.getRealData()).getRawData())+" "+" tm:"+((CacheData)tmp.getRealData()).getAccessTimestamp());
+        }
+        System.out.print("<-->end\n");
 	}
 
 }
