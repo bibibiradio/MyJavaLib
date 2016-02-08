@@ -34,6 +34,7 @@ import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HttpContext;
+import org.apache.log4j.Logger;
 
 /**
  * 
@@ -43,6 +44,7 @@ import org.apache.http.protocol.HttpContext;
  *
  */
 public class HttpSenderImplV1 implements HttpSender {
+    final private static Logger logger = Logger.getLogger(HttpSenderImplV1.class);
 	private HttpClient client = null;
 	private String proxyIp = null;
 	private int proxyPort = -1;
@@ -110,7 +112,7 @@ public class HttpSenderImplV1 implements HttpSender {
 				Thread.sleep(sendFreq - duTime);
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.error("error message",e);
 				return null;
 			}
 		}
@@ -133,7 +135,7 @@ public class HttpSenderImplV1 implements HttpSender {
 					httpPost.setEntity(new StringEntity(new String(body)));
 				} catch (UnsupportedEncodingException e) {
 					// TODO Auto-generated catch block
-					e.printStackTrace();
+				    logger.error("error message",e);
 				}
 			}
 			httpMethod = httpPost;
@@ -177,7 +179,7 @@ public class HttpSenderImplV1 implements HttpSender {
 			content = readAllFromInputStream(entity.getContent());
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+		    logger.error("error message",e);
 			return null;
 		}
 		

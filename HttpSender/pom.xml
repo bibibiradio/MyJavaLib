@@ -4,7 +4,7 @@
   <groupId>com.bibibiradio.httpsender</groupId>
   <artifactId>httpsender</artifactId>
   <packaging>jar</packaging>
-  <version>1.1.4</version>
+  <version>1.2.2</version>
   <name>httpsender</name>
   <url>http://maven.apache.org</url>
   <dependencies>
@@ -19,13 +19,19 @@
 		<artifactId>httpclient</artifactId>
 		<version>4.5.1</version>
 	</dependency>
+	<dependency>
+        <groupId>log4j</groupId>
+        <artifactId>log4j</artifactId>
+        <version>1.2.16</version>
+        <scope>provided</scope>
+    </dependency>
     
   </dependencies>
   
   <build>
   	<resources>  
             <resource>  
-                <directory>src/main/java</directory>  
+                <directory>src/main/resources</directory>  
                 <includes>  
                     <include>**/*.properties</include>  
                     <include>**/*.xml</include>  
@@ -34,7 +40,7 @@
                 </includes>  
             </resource>  
             <resource>  
-                <directory>src/test/java</directory>  
+                <directory>src/test/resources</directory>  
                 <includes>  
                     <include>**/*.properties</include>  
                     <include>**/*.xml</include>  
