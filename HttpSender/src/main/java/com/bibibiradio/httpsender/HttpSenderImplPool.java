@@ -173,6 +173,7 @@ public class HttpSenderImplPool implements HttpSender,HttpSenderPool {
         int count = 0;
         while((ele = httpSenderFailSinglePool.poll()) != null && count < failSize){
             if(System.currentTimeMillis() - ele.getLastVisitTime() > invalidTime){
+                ele.errorCount = 0;
                 httpSenderRuningSinglePool.add(ele);
             }else{
                 httpSenderFailSinglePool.add(ele);
