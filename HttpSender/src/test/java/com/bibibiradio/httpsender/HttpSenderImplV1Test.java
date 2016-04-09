@@ -23,7 +23,7 @@ public class HttpSenderImplV1Test {
 			httpSender = new HttpSenderImplV1();
 			httpSender.setCodec(true);
 			httpSender.setSendFreq(10000);
-			httpSender.setHttpProxy("127.0.0.1", 8080);
+			//httpSender.setHttpProxy("127.0.0.1", 8080);
 			httpSender.setAutoRedirect(false);
 		}
 	}
@@ -34,19 +34,19 @@ public class HttpSenderImplV1Test {
 
 	@Test
 	public void testSend() {
-//		ResponseData response = httpSender.send("https://www.baidu.com", 0, null, "123".getBytes());
-//		assertTrue(response != null);
-//		Set<Entry<String, String>> responseSet = response.getResponseHeader().entrySet();
-//		Iterator<Entry<String, String>> iter = responseSet.iterator();
-//		System.out.println(response.getStatusCode());
-//		while(iter.hasNext()){
-//			Entry<String,String> entry = iter.next();
-//			System.out.println(entry.getKey()+":"+entry.getValue());
-//		}
-//		System.out.println(new String(response.getResponseContent()));
-//		
-//		response = httpSender.send("https://www.baidu.com", 0, null, "123".getBytes());
-//		assertTrue(response != null);
+		ResponseData response = httpSender.send("https://www.baidu.com", 0, null, "123".getBytes());
+		assertTrue(response != null);
+		Set<Entry<String, String>> responseSet = response.getResponseHeader().entrySet();
+		Iterator<Entry<String, String>> iter = responseSet.iterator();
+		System.out.println(response.getStatusCode());
+		while(iter.hasNext()){
+			Entry<String,String> entry = iter.next();
+			System.out.println(entry.getKey()+":"+entry.getValue());
+		}
+		System.out.println(new String(response.getResponseContent()));
+		
+		response = httpSender.send("https://www.baidu.com", 0, null, "123".getBytes());
+		assertTrue(response != null);
 	}
 	
 	@Test
@@ -66,7 +66,7 @@ public class HttpSenderImplV1Test {
 
 	}
 	
-	@Test
+	//@Test
     public void testSend3() {
         Map<String,String> header = new HashMap<String,String>();
         //header.put("Accept-Encoding", "compress;q=0,gzip;q=0");

@@ -1,5 +1,6 @@
 package com.bibibiradio.httpsender;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -44,233 +45,224 @@ import org.apache.log4j.Logger;
  *
  */
 public class HttpSenderImplV1 implements HttpSender {
-    final private static Logger logger = Logger.getLogger(HttpSenderImplV1.class);
-	private HttpClient client = null;
-	private String proxyIp = null;
-	private int proxyPort = -1;
-	private int retryTime = 0;
-	private int timeout = -1;
-	private int soTimeout = -1;
-	private long sendFreq = -1;
-	private long lastSend = -1;
-	private boolean isCodec = false;
-	private boolean isAutoRedirect = true;
-	
-	public HttpSenderImplV1(){
-		//lastSend = System.currentTimeMillis();
-	}
-	
-	/**
-	 * 可设置HTTP代理地址
-	 * @param proxyIp 代理IP，String类型
-	 * @param proxyPort 代理端口，int类型
-	 */
-	public HttpSenderImplV1(String proxyIp,int proxyPort){
-		this.proxyIp = proxyIp;
-		this.proxyPort = proxyPort;
-	}
-	
-	@Override
-	public ResponseData send(String url, int method,Map<String, String> header, byte[] body) {
-		ResponseData responseData = null;
-		
-		//请求失败后的重试次数
-		for(int i=0;i<retryTime+1;i++){
-			responseData = oriSend(url,method,header,body);
-			if(responseData != null){
-				return responseData;
-			}
-		}
-		
-		return null;
-	}
-	
-	/**
-	 * 
-	 * 实际发送Http请求
+    final private static Logger logger         = Logger.getLogger(HttpSenderImplV1.class);
+    private HttpClient          client         = null;
+    private String              proxyIp        = null;
+    private int                 proxyPort      = -1;
+    private int                 retryTime      = 0;
+    private int                 timeout        = -1;
+    private int                 soTimeout      = -1;
+    private long                sendFreq       = -1;
+    private long                lastSend       = -1;
+    private boolean             isCodec        = false;
+    private boolean             isAutoRedirect = true;
+
+    public HttpSenderImplV1() {
+        //lastSend = System.currentTimeMillis();
+    }
+
+    /**
+     * 可设置HTTP代理地址
+     * @param proxyIp 代理IP，String类型
+     * @param proxyPort 代理端口，int类型
+     */
+    public HttpSenderImplV1(String proxyIp, int proxyPort) {
+        this.proxyIp = proxyIp;
+        this.proxyPort = proxyPort;
+    }
+
+    @Override
+    public ResponseData send(String url, int method, Map<String, String> header, byte[] body) {
+        ResponseData responseData = null;
+
+        //请求失败后的重试次数
+        for (int i = 0; i < retryTime + 1; i++) {
+            responseData = oriSend(url, method, header, body);
+            if (responseData != null) {
+                return responseData;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * 
+     * 实际发送Http请求
      * @param url url
      * @param method 0,Get;1,POST;2,PUT
      * @param header http头
      * @param body http的body
      * @return 请求返回结果
-	 */
-	public ResponseData oriSend(String url, int method,
-			Map<String, String> header, byte[] body) {
-		// TODO Auto-generated method stub
-		HttpRequestBase httpMethod = null;
-		//HttpResponse reponse = null;
-		Set<Entry<String, String>> headers = null;
-		Iterator iter = null;
-		byte[] content = null;
-		HttpResponse response = null;
-		ResponseDataImplV1 retData = new ResponseDataImplV1();
-		
-		//两次请求的间隔大于sendFreq ms
-		long duTime = System.currentTimeMillis() - lastSend;
-		if(duTime < sendFreq){
-			try {
-				Thread.sleep(sendFreq - duTime);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				logger.error("error message",e);
-				return null;
-			}
-		}
-		lastSend = System.currentTimeMillis();
-		
-		if(client == null){
-			client = newHttpClient();
-			if(isAutoRedirect == false){
-	            client.getParams().setParameter(ClientPNames.HANDLE_REDIRECTS,false);
-	        }
-		}
-		
-		//处理GET POST PUT 请求
-		if(method == 0){
-			httpMethod = new HttpGet(url);
-		}else if(method == 1){
-			HttpPost httpPost = new HttpPost(url);
-			if(body != null){
-				try {
-					httpPost.setEntity(new StringEntity(new String(body)));
-				} catch (UnsupportedEncodingException e) {
-					// TODO Auto-generated catch block
-				    logger.error("error message",e);
-				}
-			}
-			httpMethod = httpPost;
-			
-		}else if(method == 2){
-			HttpPut httpPut = new HttpPut(url);
-			if(body != null){
-				try {
-					httpPut.setEntity(new StringEntity(new String(body)));
-				} catch (UnsupportedEncodingException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-			httpMethod = httpPut;
-		}
-		
-		//设置请求头
-		if(header != null){
-			headers = header.entrySet();
-			iter = headers.iterator();
-			Entry<String, String> entry = null;
-			if(iter != null){
-				while(iter.hasNext()){
-					entry = (Entry<String, String>) iter.next();
-					httpMethod.addHeader(entry.getKey(), entry.getValue());
-				}
-			}
-		}
-		
-		//执行请求
-		try {
-			response = client.execute(httpMethod);
-			if(response == null){
-				return null;
-			}
-			
-			HttpEntity entity = response.getEntity();
-			
-			//获取相应body
-			content = readAllFromInputStream(entity.getContent());
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-		    logger.error("error message",e);
-			return null;
-		}
-		
-		//获取响应头
-		Header[] allHeader = response.getAllHeaders();
-		Map<String,String> mapHeader = new HashMap<String,String>();
-		for(int i = 0;i < allHeader.length;i++){
-			Header rHead = allHeader[i];
-			mapHeader.put(rHead.getName(), rHead.getValue());
-		}
-		retData.setResponseHeader(mapHeader);
-		retData.setResponseContent(content);
-		
-		//获取响应状态
-		retData.setStatusCode(response.getStatusLine().getStatusCode());
-		
-		return retData;
-	}
-	
+     */
+    public ResponseData oriSend(String url, int method, Map<String, String> header, byte[] body) {
+        // TODO Auto-generated method stub
+        HttpRequestBase httpMethod = null;
+        //HttpResponse reponse = null;
+        Set<Entry<String, String>> headers = null;
+        Iterator iter = null;
+        byte[] content = null;
+        HttpResponse response = null;
+        ResponseDataImplV1 retData = new ResponseDataImplV1();
 
-	public boolean isCodec() {
-		return isCodec;
-	}
-	
-	
-	public void setCodec(boolean isCodec) {
-		this.isCodec = isCodec;
-	}
-	
-	public String getProxyIp() {
-		return proxyIp;
-	}
+        //两次请求的间隔大于sendFreq ms
+        long duTime = System.currentTimeMillis() - lastSend;
+        if (duTime < sendFreq) {
+            try {
+                Thread.sleep(sendFreq - duTime);
+            } catch (InterruptedException e) {
+                // TODO Auto-generated catch block
+                logger.error("error message", e);
+                return null;
+            }
+        }
+        lastSend = System.currentTimeMillis();
 
+        if (client == null) {
+            client = newHttpClient();
+            if (isAutoRedirect == false) {
+                client.getParams().setParameter(ClientPNames.HANDLE_REDIRECTS, false);
+            }
+        }
 
+        //处理GET POST PUT 请求
+        if (method == 0) {
+            httpMethod = new HttpGet(url);
+        } else if (method == 1) {
+            HttpPost httpPost = new HttpPost(url);
+            if (body != null) {
+                try {
+                    httpPost.setEntity(new StringEntity(new String(body)));
+                } catch (UnsupportedEncodingException e) {
+                    // TODO Auto-generated catch block
+                    logger.error("error message", e);
+                }
+            }
+            httpMethod = httpPost;
 
-	public void setProxyIp(String proxyIp) {
-		this.proxyIp = proxyIp;
-	}
+        } else if (method == 2) {
+            HttpPut httpPut = new HttpPut(url);
+            if (body != null) {
+                try {
+                    httpPut.setEntity(new StringEntity(new String(body)));
+                } catch (UnsupportedEncodingException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            }
+            httpMethod = httpPut;
+        }
 
+        //设置请求头
+        if (header != null) {
+            headers = header.entrySet();
+            iter = headers.iterator();
+            Entry<String, String> entry = null;
+            if (iter != null) {
+                while (iter.hasNext()) {
+                    entry = (Entry<String, String>) iter.next();
+                    httpMethod.addHeader(entry.getKey(), entry.getValue());
+                }
+            }
+        }
 
+        //执行请求
+        try {
+            response = client.execute(httpMethod);
+            if (response == null) {
+                return null;
+            }
 
-	public int getProxyPort() {
-		return proxyPort;
-	}
+            HttpEntity entity = response.getEntity();
 
+            //获取相应body
+            content = readAllFromInputStream(entity.getContent());
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            logger.error("error message", e);
+            return null;
+        }
 
+        //获取响应头
+        Header[] allHeader = response.getAllHeaders();
+        Map<String, String> mapHeader = new HashMap<String, String>();
+        for (int i = 0; i < allHeader.length; i++) {
+            Header rHead = allHeader[i];
+            mapHeader.put(rHead.getName(), rHead.getValue());
+        }
+        retData.setResponseHeader(mapHeader);
+        retData.setResponseContent(content);
 
-	public void setProxyPort(int proxyPort) {
-		this.proxyPort = proxyPort;
-	}
-	
-	@Override
-	public void setHttpProxy(String proxyIp, int proxyPort) {
-		// TODO Auto-generated method stub
-		this.proxyIp = proxyIp;
-		this.proxyPort = proxyPort;
-		
-	}
+        //获取响应状态
+        retData.setStatusCode(response.getStatusLine().getStatusCode());
 
-	@Override
-	public boolean setPeerCerts(File[] certs) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+        return retData;
+    }
 
-	@Override
-	public boolean setMyCerts(File[] certs) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    public boolean isCodec() {
+        return isCodec;
+    }
 
-	@Override
-	public void setTimeout(long timeout) {
-		// TODO Auto-generated method stub
-		this.timeout = (int) timeout;
-	}
+    public void setCodec(boolean isCodec) {
+        this.isCodec = isCodec;
+    }
 
-	@Override
-	public void setRetryTime(long retryTime) {
-		// TODO Auto-generated method stub
-		this.retryTime = (int) retryTime;
-	}
+    public String getProxyIp() {
+        return proxyIp;
+    }
 
-	@Override
-	public void setSendFreq(long sendFreq) {
-		// TODO Auto-generated method stub
-		this.sendFreq = sendFreq;
-		
-	}
-	
-	public boolean isAutoRedirect() {
+    public void setProxyIp(String proxyIp) {
+        this.proxyIp = proxyIp;
+    }
+
+    public int getProxyPort() {
+        return proxyPort;
+    }
+
+    public void setProxyPort(int proxyPort) {
+        this.proxyPort = proxyPort;
+    }
+
+    @Override
+    public void setHttpProxy(String proxyIp, int proxyPort) {
+        // TODO Auto-generated method stub
+        this.proxyIp = proxyIp;
+        this.proxyPort = proxyPort;
+
+    }
+
+    @Override
+    public boolean setPeerCerts(File[] certs) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean setMyCerts(File[] certs) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public void setTimeout(long timeout) {
+        // TODO Auto-generated method stub
+        this.timeout = (int) timeout;
+    }
+
+    @Override
+    public void setRetryTime(long retryTime) {
+        // TODO Auto-generated method stub
+        this.retryTime = (int) retryTime;
+    }
+
+    @Override
+    public void setSendFreq(long sendFreq) {
+        // TODO Auto-generated method stub
+        this.sendFreq = sendFreq;
+
+    }
+
+    public boolean isAutoRedirect() {
         return isAutoRedirect;
     }
 
@@ -279,101 +271,99 @@ public class HttpSenderImplV1 implements HttpSender {
     }
 
     @Override
-	public boolean start() {
-		// TODO Auto-generated method stub
-		return true;
-	}
+    public boolean start() {
+        // TODO Auto-generated method stub
+        return true;
+    }
 
-	@Override
-	public void close() {
-		// TODO Auto-generated method stub
-		if(client != null){
-			client.getConnectionManager().shutdown();
-		}
-	}
-	
-	@Override
-	public void setSoTimeout(long soTimeout) {
-		// TODO Auto-generated method stub
-		this.soTimeout = (int) soTimeout;
-	}
-	
-	/**
-	 * 将返回数据流读出成byte[]
-	 * @param inputStream 请求返回的流
-	 * @return 请求返回数据
-	 */
-	private byte[] readAllFromInputStream(InputStream inputStream){
-		StringBuilder sb1 = new StringBuilder();      
-        byte[] bytes = new byte[4096];    
-        int size = 0;    
-          
-        try {      
-            while ((size = inputStream.read(bytes)) > 0) {    
-                String str = new String(bytes, 0, size);    
-                sb1.append(str);    
-            }    
+    @Override
+    public void close() {
+        // TODO Auto-generated method stub
+        if (client != null) {
+            client.getConnectionManager().shutdown();
+        }
+    }
+
+    @Override
+    public void setSoTimeout(long soTimeout) {
+        // TODO Auto-generated method stub
+        this.soTimeout = (int) soTimeout;
+    }
+
+    /**
+     * 将返回数据流读出成byte[]
+     * @param inputStream 请求返回的流
+     * @return 请求返回数据
+     */
+    private byte[] readAllFromInputStream(InputStream inputStream) {
+        byte[] bytes = new byte[4096];
+        int size = 0;
+        ByteArrayOutputStream ba = new ByteArrayOutputStream();
+
+        try {
+            while ((size = inputStream.read(bytes)) > 0) {
+                ba.write(bytes, 0, size);
+            }
         } catch (IOException e) {
-            e.printStackTrace();      
+            e.printStackTrace();
         } finally {
-            try {      
-            	inputStream.close();      
-            } catch (IOException e) {      
-            	e.printStackTrace();      
-            } 
-        }  
-        return sb1.toString().getBytes();
-	}
-	
-	/**
-	 * 底层生成HttpClient实例
-	 * @return HttpClient客户端
-	 */
-	private HttpClient newHttpClient(){
-		HttpParams params =new BasicHttpParams();
-		
-		//设置连接超时时间
-		if(timeout != -1){
-			HttpConnectionParams.setConnectionTimeout(params, timeout);
-		}
-		
-		//设置无数据超时时间
-		if(soTimeout != -1){
-			HttpConnectionParams.setSoTimeout(params, soTimeout);
-		}
-		
-		//设置http代理地址
-		if(proxyIp != null && proxyPort != -1){
-			params.setParameter(ConnRoutePNames.DEFAULT_PROXY, new HttpHost(proxyIp, proxyPort));
-		}
-		
-		//处理连接超时时间
-		ClientConnectionManager conMgr =new ThreadSafeClientConnManager();
-		
-		DefaultHttpClient httpClient = new DefaultHttpClient(conMgr,params);
-		
-		if(isCodec){
-			httpClient.addResponseInterceptor(new HttpResponseInterceptor() {  
-				   @Override
-		           public void process(  
-		                   HttpResponse response,   
-		                   HttpContext context) throws HttpException, IOException {  
-		               HttpEntity entity = response.getEntity();  
-		               Header ceheader = entity.getContentEncoding();  
-		               if (ceheader != null) {  
-		                   HeaderElement[] codecs = ceheader.getElements();  
-		                   for (int i = 0; i < codecs.length; i++) {  
-		                       if (codecs[i].getName().equalsIgnoreCase("gzip")) {  
-		                           response.setEntity(  
-		                                   new GzipDecompressingEntity(response.getEntity()));   
-		                           return;  
-		                       }  
-		                   }  
-		               }  
-		           } 
-		       });
-		}
-		
-		return httpClient;
-	}
+            try {
+                inputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return ba.toByteArray();
+    }
+
+    /**
+     * 底层生成HttpClient实例
+     * @return HttpClient客户端
+     */
+    private HttpClient newHttpClient() {
+        HttpParams params = new BasicHttpParams();
+
+        //设置连接超时时间
+        if (timeout != -1) {
+            HttpConnectionParams.setConnectionTimeout(params, timeout);
+        }
+
+        //设置无数据超时时间
+        if (soTimeout != -1) {
+            HttpConnectionParams.setSoTimeout(params, soTimeout);
+        }
+
+        //设置http代理地址
+        if (proxyIp != null && proxyPort != -1) {
+            params.setParameter(ConnRoutePNames.DEFAULT_PROXY, new HttpHost(proxyIp, proxyPort));
+        }
+
+        //处理连接超时时间
+        ClientConnectionManager conMgr = new ThreadSafeClientConnManager();
+
+        DefaultHttpClient httpClient = new DefaultHttpClient(conMgr, params);
+
+        if (isCodec) {
+            httpClient.addResponseInterceptor(new HttpResponseInterceptor() {
+                @Override
+                public void process(HttpResponse response, HttpContext context)
+                                                                               throws HttpException,
+                                                                               IOException {
+                    HttpEntity entity = response.getEntity();
+                    Header ceheader = entity.getContentEncoding();
+                    if (ceheader != null) {
+                        HeaderElement[] codecs = ceheader.getElements();
+                        for (int i = 0; i < codecs.length; i++) {
+                            if (codecs[i].getName().equalsIgnoreCase("gzip")) {
+                                response.setEntity(new GzipDecompressingEntity(response.getEntity()));
+                                return;
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        return httpClient;
+    }
 }
