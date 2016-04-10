@@ -295,7 +295,7 @@ public class HttpSenderImplV1 implements HttpSender {
      * @param inputStream 请求返回的流
      * @return 请求返回数据
      */
-    private byte[] readAllFromInputStream(InputStream inputStream) {
+    private byte[] readAllFromInputStream(InputStream inputStream) throws Exception {
         byte[] bytes = new byte[4096];
         int size = 0;
         ByteArrayOutputStream ba = new ByteArrayOutputStream();
@@ -304,14 +304,8 @@ public class HttpSenderImplV1 implements HttpSender {
             while ((size = inputStream.read(bytes)) > 0) {
                 ba.write(bytes, 0, size);
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         } finally {
-            try {
-                inputStream.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            inputStream.close();
         }
         return ba.toByteArray();
     }
