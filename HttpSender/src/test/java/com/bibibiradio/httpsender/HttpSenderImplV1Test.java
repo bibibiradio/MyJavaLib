@@ -32,7 +32,7 @@ public class HttpSenderImplV1Test {
 	public void tearDown() throws Exception {
 	}
 
-	@Test
+	//@Test
 	public void testSend() {
 		ResponseData response = httpSender.send("https://www.baidu.com", 0, null, "123".getBytes());
 		assertTrue(response != null);
@@ -49,7 +49,7 @@ public class HttpSenderImplV1Test {
 		assertTrue(response != null);
 	}
 	
-	@Test
+	//@Test
 	public void testSend2() {
 		Map<String,String> header = new HashMap<String,String>();
 		//header.put("Accept-Encoding", "compress;q=0,gzip;q=0");

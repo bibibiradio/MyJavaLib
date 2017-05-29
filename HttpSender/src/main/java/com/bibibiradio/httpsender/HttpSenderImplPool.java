@@ -145,6 +145,7 @@ public class HttpSenderImplPool implements HttpSender,HttpSenderPool {
             responseData = httpSender.send(url, method, header, body);
             if(responseData != null){
                 ele.setLastVisitTime(System.currentTimeMillis());
+                logger.info(ele.getProxyContent().getIp()+":"+ele.getProxyContent().getPort()+" valid");
                 httpSenderRuningSinglePool.add(ele);
             }else{
                 ele.setErrorCount(ele.getErrorCount()+1);
