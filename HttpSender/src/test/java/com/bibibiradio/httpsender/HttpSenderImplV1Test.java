@@ -25,6 +25,7 @@ public class HttpSenderImplV1Test {
 			httpSender.setSendFreq(10000);
 			//httpSender.setHttpProxy("127.0.0.1", 8080);
 			httpSender.setAutoRedirect(false);
+			httpSender.setCheckPeerCert(false);
 		}
 	}
 
@@ -32,8 +33,8 @@ public class HttpSenderImplV1Test {
 	public void tearDown() throws Exception {
 	}
 
-	//@Test
-	public void testSend() {
+	@Test
+	public void testSend() throws Exception {
 		ResponseData response = httpSender.send("https://www.baidu.com", 0, null, "123".getBytes());
 		assertTrue(response != null);
 		Set<Entry<String, String>> responseSet = response.getResponseHeader().entrySet();
@@ -49,8 +50,8 @@ public class HttpSenderImplV1Test {
 		assertTrue(response != null);
 	}
 	
-	//@Test
-	public void testSend2() {
+	@Test
+	public void testSend2() throws Exception {
 		Map<String,String> header = new HashMap<String,String>();
 		//header.put("Accept-Encoding", "compress;q=0,gzip;q=0");
 		ResponseData response = httpSender.send("http://www.bilibili.com/video/av2893535/", 0, header, null);
@@ -67,7 +68,7 @@ public class HttpSenderImplV1Test {
 	}
 	
 	//@Test
-    public void testSend3() {
+    public void testSend3() throws Exception {
         Map<String,String> header = new HashMap<String,String>();
         //header.put("Accept-Encoding", "compress;q=0,gzip;q=0");
         ResponseData response = httpSender.send("http://www.test.checkhtml.com/urljump_yes?param=http://xlxlxl/path", 0, header, null);
@@ -82,5 +83,21 @@ public class HttpSenderImplV1Test {
         System.out.println(new String(response.getResponseContent()));
 
     }
+
+	@Test
+	public void testSen4() throws Exception {
+		Map<String,String> header = new HashMap<String,String>();
+		//header.put("Accept-Encoding", "compress;q=0,gzip;q=0");
+		ResponseData response = httpSender.send("https://cdn.nhentai.xxx/g/1756709/1.jpg", 0, header, null);
+		assertTrue(response != null);
+		Set<Entry<String, String>> responseSet = response.getResponseHeader().entrySet();
+		Iterator<Entry<String, String>> iter = responseSet.iterator();
+		System.out.println(response.getStatusCode());
+		while(iter.hasNext()){
+			Entry<String,String> entry = iter.next();
+			System.out.println(entry.getKey()+":"+entry.getValue());
+		}
+		System.out.println(new String(response.getResponseContent()));
+	}
 
 }

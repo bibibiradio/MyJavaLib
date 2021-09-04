@@ -12,7 +12,7 @@ public interface HttpSender {
      * @param body http的body
      * @return 请求返回结果
      */
-	public ResponseData send(String url,int method,Map<String,String> header,byte[] body);
+	public ResponseData send(String url,int method,Map<String,String> header,byte[] body) throws Exception;
 	
 	/**
 	 * 设置对方根及中间证书
@@ -76,6 +76,12 @@ public interface HttpSender {
 	 * @param isCodec true，自动解压；false，返回原始数据
 	 */
 	public void setCodec(boolean isCodec);
+
+	/**
+	 * 是否校验证书
+	 * @param checkPeerCert
+	 */
+	public void setCheckPeerCert(boolean checkPeerCert);
 	
 	/**
 	 * 关闭httpSender

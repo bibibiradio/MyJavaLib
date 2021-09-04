@@ -63,6 +63,7 @@ public class HttpSenderImplPool implements HttpSender,HttpSenderPool {
     private long sendFreq = -1;
     private boolean isCodec = false;
     private boolean isAutoRedirect = true;
+    private boolean isCheckPeerCert = false;
     
     @Override
     public boolean start() {
@@ -107,6 +108,7 @@ public class HttpSenderImplPool implements HttpSender,HttpSenderPool {
         httpSender.setSendFreq(sendFreq);
         httpSender.setSoTimeout(soTimeout);
         httpSender.setTimeout(timeout);
+        httpSender.setCheckPeerCert(isCheckPeerCert);
         
         if(!proxy.getIp().equals("0.0.0.0")){
             httpSender.setHttpProxy(proxy.getIp(), proxy.getPort());
@@ -127,7 +129,7 @@ public class HttpSenderImplPool implements HttpSender,HttpSenderPool {
     }
     
     @Override
-    public ResponseData send(String url, int method, Map<String, String> header, byte[] body) {
+    public ResponseData send(String url, int method, Map<String, String> header, byte[] body) throws Exception{
         // TODO Auto-generated method stub
         validQueue();
         int poolRetryTime = httpSenderRuningSinglePool.size();
@@ -256,4 +258,8 @@ public class HttpSenderImplPool implements HttpSender,HttpSenderPool {
         this.invalidTime = invalidTime;
     }
 
+    @Override
+    public void setCheckPeerCert(boolean checkPeerCert) {
+        isCheckPeerCert = checkPeerCert;
+    }
 }

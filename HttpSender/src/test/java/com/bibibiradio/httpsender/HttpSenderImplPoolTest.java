@@ -38,7 +38,7 @@ public class HttpSenderImplPoolTest {
     }
 
     @Test
-    public void test() {
+    public void test() throws Exception{
         HttpSenderImplPool httpSenderPool = new HttpSenderImplPool();
         httpSenderPool.setProxys(ProxysParse.parse(proxys));
         httpSenderPool.setInvalidTime(100000);
@@ -68,7 +68,7 @@ public class HttpSenderImplPoolTest {
     }
     
     //@Test
-    public void test2(){
+    public void test2() throws Exception{
         HttpSender hp;
         Map<String,String> header = new HashMap<String,String>();
         

@@ -5,6 +5,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -19,6 +21,7 @@ import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpResponseInterceptor;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.GzipDecompressingEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -29,13 +32,17 @@ import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.conn.params.ConnRoutePNames;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.AbstractHttpClient;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HttpContext;
 import org.apache.log4j.Logger;
+
+import javax.net.ssl.*;
 
 /**
  * 
@@ -56,6 +63,7 @@ public class HttpSenderImplV1 implements HttpSender {
     private long                lastSend       = -1;
     private boolean             isCodec        = false;
     private boolean             isAutoRedirect = true;
+    private boolean             isCheckPeerCert = false;
 
     public HttpSenderImplV1() {
         //lastSend = System.currentTimeMillis();
@@ -72,7 +80,7 @@ public class HttpSenderImplV1 implements HttpSender {
     }
 
     @Override
-    public ResponseData send(String url, int method, Map<String, String> header, byte[] body) {
+    public ResponseData send(String url, int method, Map<String, String> header, byte[] body) throws Exception{
         ResponseData responseData = null;
 
         //请求失败后的重试次数
@@ -95,7 +103,7 @@ public class HttpSenderImplV1 implements HttpSender {
      * @param body http的body
      * @return 请求返回结果
      */
-    public ResponseData oriSend(String url, int method, Map<String, String> header, byte[] body) {
+    public ResponseData oriSend(String url, int method, Map<String, String> header, byte[] body) throws Exception {
         // TODO Auto-generated method stub
         HttpRequestBase httpMethod = null;
         //HttpResponse reponse = null;
@@ -120,9 +128,6 @@ public class HttpSenderImplV1 implements HttpSender {
 
         if (client == null) {
             client = newHttpClient();
-            if (isAutoRedirect == false) {
-                client.getParams().setParameter(ClientPNames.HANDLE_REDIRECTS, false);
-            }
         }
 
         //处理GET POST PUT 请求
@@ -314,42 +319,79 @@ public class HttpSenderImplV1 implements HttpSender {
      * 底层生成HttpClient实例
      * @return HttpClient客户端
      */
-    private HttpClient newHttpClient() {
-        HttpParams params = new BasicHttpParams();
+    private HttpClient newHttpClient() throws Exception {
+        HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
 
-        //设置连接超时时间
+        RequestConfig.Builder rc = RequestConfig.custom();
+        // 设置连接超时时间
         if (timeout != -1) {
-            HttpConnectionParams.setConnectionTimeout(params, timeout);
+            rc.setConnectTimeout(timeout);
         }
 
-        //设置无数据超时时间
+        // 设置无数据超时时间
         if (soTimeout != -1) {
-            HttpConnectionParams.setSoTimeout(params, soTimeout);
+            rc.setSocketTimeout(soTimeout);
         }
 
-        //设置http代理地址
+        // 设置http代理地址
         if (proxyIp != null && proxyPort != -1) {
-            params.setParameter(ConnRoutePNames.DEFAULT_PROXY, new HttpHost(proxyIp, proxyPort));
+            rc.setProxy(new HttpHost(
+                    proxyIp, proxyPort));
         }
 
-        //处理连接超时时间
-        ClientConnectionManager conMgr = new ThreadSafeClientConnManager();
+        if (!isAutoRedirect) {
+            rc.setRedirectsEnabled(isAutoRedirect);
+        }
 
-        DefaultHttpClient httpClient = new DefaultHttpClient(conMgr, params);
+        httpClientBuilder.setDefaultRequestConfig(rc.build());
+
+        if (!isCheckPeerCert) {
+            try {
+                SSLContext ctx = SSLContext.getInstance("SSL");
+                // Implementation of a trust manager for X509 certificates
+                X509TrustManager tm = new X509TrustManager() {
+
+                    public void checkClientTrusted(X509Certificate[] xcs,
+                                                   String string) throws CertificateException {
+
+                    }
+
+                    public void checkServerTrusted(X509Certificate[] xcs,
+                                                   String string) throws CertificateException {
+                    }
+
+                    public X509Certificate[] getAcceptedIssuers() {
+                        return null;
+                    }
+                };
+                ctx.init(null, new TrustManager[] { tm }, null);
+
+                httpClientBuilder.setSSLContext(ctx);
+                httpClientBuilder.setSSLHostnameVerifier(new HostnameVerifier() {
+                    @Override
+                    public boolean verify(String arg0, SSLSession arg1) {
+                        // TODO Auto-generated method stub
+                        return true;
+                    }
+                });
+            } catch (Exception ex) {
+                throw ex;
+            }
+        }
 
         if (isCodec) {
-            httpClient.addResponseInterceptor(new HttpResponseInterceptor() {
+            httpClientBuilder.addInterceptorLast(new HttpResponseInterceptor() {
                 @Override
                 public void process(HttpResponse response, HttpContext context)
-                                                                               throws HttpException,
-                                                                               IOException {
+                        throws HttpException, IOException {
                     HttpEntity entity = response.getEntity();
                     Header ceheader = entity.getContentEncoding();
                     if (ceheader != null) {
                         HeaderElement[] codecs = ceheader.getElements();
                         for (int i = 0; i < codecs.length; i++) {
                             if (codecs[i].getName().equalsIgnoreCase("gzip")) {
-                                response.setEntity(new GzipDecompressingEntity(response.getEntity()));
+                                response.setEntity(new GzipDecompressingEntity(
+                                        response.getEntity()));
                                 return;
                             }
                         }
@@ -358,6 +400,16 @@ public class HttpSenderImplV1 implements HttpSender {
             });
         }
 
+        CloseableHttpClient httpClient = httpClientBuilder.build();
+
         return httpClient;
+    }
+
+    public boolean isCheckPeerCert() {
+        return isCheckPeerCert;
+    }
+
+    public void setCheckPeerCert(boolean checkPeerCert) {
+        isCheckPeerCert = checkPeerCert;
     }
 }
