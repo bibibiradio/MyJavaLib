@@ -165,7 +165,12 @@ public class HttpSenderImplPool implements HttpSender,HttpSenderPool {
         
         return responseData;
     }
-    
+
+    @Override
+    public ResponseData send2(String url, int method, Map<String, String> header, String body) throws Exception {
+        return null;
+    }
+
     private void validQueue(){
         int failSize = httpSenderFailSinglePool.size();
         if(failSize <= 0){
@@ -261,5 +266,10 @@ public class HttpSenderImplPool implements HttpSender,HttpSenderPool {
     @Override
     public void setCheckPeerCert(boolean checkPeerCert) {
         isCheckPeerCert = checkPeerCert;
+    }
+
+    @Override
+    public void setCharSet(String charSet) {
+
     }
 }

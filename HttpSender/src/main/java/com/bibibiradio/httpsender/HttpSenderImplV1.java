@@ -64,6 +64,7 @@ public class HttpSenderImplV1 implements HttpSender {
     private boolean             isCodec        = false;
     private boolean             isAutoRedirect = true;
     private boolean             isCheckPeerCert = false;
+    private String              charSet = "UTF-8";
 
     public HttpSenderImplV1() {
         //lastSend = System.currentTimeMillis();
@@ -85,6 +86,21 @@ public class HttpSenderImplV1 implements HttpSender {
 
         //请求失败后的重试次数
         for (int i = 0; i < retryTime + 1; i++) {
+            responseData = oriSend(url, method, header, new String(body));
+            if (responseData != null) {
+                return responseData;
+            }
+        }
+
+        return null;
+    }
+
+    @Override
+    public ResponseData send2(String url, int method, Map<String, String> header, String body) throws Exception{
+        ResponseData responseData = null;
+
+        //请求失败后的重试次数
+        for (int i = 0; i < retryTime + 1; i++) {
             responseData = oriSend(url, method, header, body);
             if (responseData != null) {
                 return responseData;
@@ -95,7 +111,7 @@ public class HttpSenderImplV1 implements HttpSender {
     }
 
     /**
-     * 
+     *
      * 实际发送Http请求
      * @param url url
      * @param method 0,Get;1,POST;2,PUT
@@ -103,7 +119,7 @@ public class HttpSenderImplV1 implements HttpSender {
      * @param body http的body
      * @return 请求返回结果
      */
-    public ResponseData oriSend(String url, int method, Map<String, String> header, byte[] body) throws Exception {
+    public ResponseData oriSend(String url, int method, Map<String, String> header, String body) throws Exception {
         // TODO Auto-generated method stub
         HttpRequestBase httpMethod = null;
         //HttpResponse reponse = null;
@@ -137,8 +153,8 @@ public class HttpSenderImplV1 implements HttpSender {
             HttpPost httpPost = new HttpPost(url);
             if (body != null) {
                 try {
-                    httpPost.setEntity(new StringEntity(new String(body)));
-                } catch (UnsupportedEncodingException e) {
+                    httpPost.setEntity(new StringEntity(new String(body),charSet));
+                } catch (Exception e) {
                     // TODO Auto-generated catch block
                     logger.error("error message", e);
                 }
@@ -149,8 +165,8 @@ public class HttpSenderImplV1 implements HttpSender {
             HttpPut httpPut = new HttpPut(url);
             if (body != null) {
                 try {
-                    httpPut.setEntity(new StringEntity(new String(body)));
-                } catch (UnsupportedEncodingException e) {
+                    httpPut.setEntity(new StringEntity(new String(body),charSet));
+                } catch (Exception e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
@@ -411,5 +427,10 @@ public class HttpSenderImplV1 implements HttpSender {
 
     public void setCheckPeerCert(boolean checkPeerCert) {
         isCheckPeerCert = checkPeerCert;
+    }
+
+    @Override
+    public void setCharSet(String charSet) {
+        this.charSet=charSet;
     }
 }

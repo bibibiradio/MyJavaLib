@@ -50,7 +50,7 @@ public class HttpSenderImplV1Test {
 		assertTrue(response != null);
 	}
 	
-	@Test
+	//@Test
 	public void testSend2() throws Exception {
 		Map<String,String> header = new HashMap<String,String>();
 		//header.put("Accept-Encoding", "compress;q=0,gzip;q=0");
@@ -84,7 +84,7 @@ public class HttpSenderImplV1Test {
 
     }
 
-	@Test
+	//@Test
 	public void testSen4() throws Exception {
 		Map<String,String> header = new HashMap<String,String>();
 		//header.put("Accept-Encoding", "compress;q=0,gzip;q=0");

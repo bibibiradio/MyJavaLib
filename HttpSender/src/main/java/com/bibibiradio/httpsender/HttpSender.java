@@ -4,6 +4,10 @@ import java.io.File;
 import java.util.Map;
 
 public interface HttpSender {
+	public static int GET = 0;
+	public static int POST = 1;
+	public static int PUT = 2;
+
     /**
      * 发送Http请求
      * @param url url
@@ -13,6 +17,16 @@ public interface HttpSender {
      * @return 请求返回结果
      */
 	public ResponseData send(String url,int method,Map<String,String> header,byte[] body) throws Exception;
+
+	/**
+	 * 发送Http请求
+	 * @param url url
+	 * @param method 0,Get;1,POST;2,PUT
+	 * @param header http头
+	 * @param body http的body
+	 * @return 请求返回结果
+	 */
+	public ResponseData send2(String url,int method,Map<String,String> header,String body) throws Exception;
 	
 	/**
 	 * 设置对方根及中间证书
@@ -82,6 +96,12 @@ public interface HttpSender {
 	 * @param checkPeerCert
 	 */
 	public void setCheckPeerCert(boolean checkPeerCert);
+
+	/**
+	 * 设置字符编码
+	 * @param charSet
+	 */
+	public void setCharSet(String charSet);
 	
 	/**
 	 * 关闭httpSender
